@@ -27,6 +27,7 @@ SPARK_PACKAGE = "spark-%s" % SPARK_VERSION
 SPARK_PACKAGE_URL = "http://ftp.halifax.rwth-aachen.de/apache/spark/%s/%s-bin-hadoop2.tgz" % (SPARK_PACKAGE, SPARK_PACKAGE)
 SPARK_PREFIX = "/home/hduser/%s" % SPARK_PACKAGE
 
+STORM_DIR = "/home/hduser"
 
 # Change this to the command you would use to install packages on the
 # remote hosts.
@@ -64,6 +65,8 @@ SSH_USER = "hduser"
 NAMENODE_HOST = "shittymachine23"
 RESOURCEMANAGER_HOST = "shittymachine23"
 SLAVE_HOSTS = ["nein", "shittymachine23"]
+# for Storm installation:
+NIMBUS_HOST = "shittymachine23"
 #NAMENODE_HOST = "namenode.alexjf.net"
 #RESOURCEMANAGER_HOST = "resourcemanager.alexjf.net"
 #SLAVE_HOSTS = ["slave%d.alexjf.net" % i for i in range(1, 6)]
@@ -152,6 +155,7 @@ def all():
     formatHdfs()
     writeSlaves()
     installSpark()
+    installStorm()
 
 def writeSlaves():
     slaves_file = HADOOP_PREFIX + "/etc/hadoop/slaves"
@@ -165,6 +169,15 @@ def installDependencies():
 
 def installSpark():
     install(SPARK_PREFIX, SPARK_PACKAGE, SPARK_PACKAGE_URL)
+
+def installStorm():
+    localPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "install_storm.sh")
+    remotePath = os.path.join("/tmp", "install_storm.sh")
+    scriptPath = localPath
+    if (env.host != NIMBUS_HOST):
+        put(localPath, remotePath, mode=0755)
+        scriptPath = remotePath
+    sudo("%s %s %s %s" % (scriptPath, env.host, NIMBUS_HOST, STORM_DIR))
 
 def install(prefix=HADOOP_PREFIX, package=HADOOP_PACKAGE, package_url=HADOOP_PACKAGE_URL):
     installDirectory = os.path.dirname(prefix)
